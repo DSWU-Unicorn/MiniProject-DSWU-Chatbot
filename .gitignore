@@ -1,2 +1,4 @@
-Chatbot/config/DatabaseConfig.py
+Chatbot/config.py
 .idea/
+secrets.json
+allzero

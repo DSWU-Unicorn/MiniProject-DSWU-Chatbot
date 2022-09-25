@@ -6,44 +6,45 @@ from pathlib import Path
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+
 BASE_DIR = Path(__file__).resolve().parent
 
 url = "https://discover.duksung.ac.kr/pyxis-api/1/bulletin-boards/1/bulletins?max=100&nameOption=hide&offset=0"
-payload={}
+payload = {}
 headers = {}
 response = requests.request("GET", url, headers=headers, data=payload)
-res=response.json()
+res = response.json()
 # print(res)
 
-lib_dic={'id':[], 'content':[]}
+lib_dic = {'id': [], 'content': []}
 
-id_list= []
+id_list = []
 try:
     for item in res["data"]['list']:
-    # ['id']
+        # ['id']
         id_list.append(item['id'])
 except:
     time.sleep(2)
 
-print(id_list) # id 저장
+# print(id_list)  # id 저장
 
 # 내부 url
 for id in id_list:
     url = f"https://discover.duksung.ac.kr/pyxis-api/1/bulletins/{id}"
 
-    querystring = {"nameOption":"hide"}
+    querystring = {"nameOption": "hide"}
 
     payload = ""
     response = requests.request("GET", url, data=payload, params=querystring)
     con_res = response.json()
 
-    print(con_res)
     con_list = []
     try:
         for content in con_res["data"]['content']:
-            #regex = "\(.*\)|\ㄴ-\ㄴ.*"
-            #cleanr = re.compile('<.*?>')
-            #cleantext = BeautifulSoup(content, "lxml").text
+            # regex = "\(.*\)|\ㄴ-\ㄴ.*"
+            # cleanr = re.compile('<.*?>')
+            # cleantext = BeautifulSoup(content, "lxml").text
+            '''
             new_str = re.sub(r"[^\uAC00-\uD7A30-9가-힣]", "", content)
 
             new_str = new_str.strip('돋움')
@@ -56,21 +57,36 @@ for id in id_list:
             new_str.rstrip()
             #cleantext = re.sub(cleanr, '', cleantext)
             con_list.append(new_str)
-
+            '''
+            con_list.append(content)
         # print(con_list)
-        notice=''.join(con_list)
-        # 연속된 숫자 삭제 -> 로직어떻게하지?
-        # 053579899502022916금온라인으로진행된이용교육입니다계정생성부터문헌수집인용삽입및참문헌목록생성을포하였으며교육시간약1시간입니다 이렇게 있을때, 연속된 3자리 이상의 숫자를 삭제하고픔.
-        print(notice)
+        notice = ''.join(con_list)
+
+        html_tag = re.compile('<.*?>')
+        text = re.sub(html_tag, '', notice)
+        text = text.replace('&nbsp;', '')
+        text = text.replace('&amp;', '')
+        text = text.replace('&quot;', '')
+        text = text.replace('&lt;', '')
+        text = text.replace('&gt;', '')
+        text = text.replace('&darr;', '')
+        text = text.replace('&#39;', '')
+        text = text.replace('&#39;', '')
+        text = text.replace('&rarr;', '')
+        text = text.replace('&lsquo;', '')
+        text = text.replace('&middot;', '')
+        text = text.replace('&rsquo;', '')
+        text = text.replace('\n', '')
+        text = text.replace('\t', '')
+        # print(text)
+
         lib_dic['id'].append(id)
-        lib_dic['content'].append(notice)
+        lib_dic['content'].append(text)
 
 
     except:
         time.sleep(2)
 
-pd.DataFrame(lib_dic).to_csv(BASE_DIR/'crawling_library_notice_content.csv', encoding='utf-8-sig')
+pd.DataFrame(lib_dic).to_csv(BASE_DIR / 'crawling_library_notice_content.csv', encoding='utf-8-sig', index=False)
+
 print('crawling_library_notice_content.csv done!')
-
-
-
