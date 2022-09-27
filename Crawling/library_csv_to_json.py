@@ -6,7 +6,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 
 input_file_name = "crawling_library_notice_content.csv"
-output_file_name = "../notice.json"
+output_file_name = "../allzero/notice.json"
 
 data = {}
 
