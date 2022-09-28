@@ -4,9 +4,9 @@ from pathlib import Path
 from Chatbot.config import api_key, chat_id
 from pymongo import MongoClient
 from DataBase.config import MONGO_URL, MONGO_DB_NAME
-
+from Chatbot.get_time import get_weekday
 BASE_DIR = Path(__file__).resolve().parent
-print('base dir is..', BASE_DIR)
+# print('base dir is..', BASE_DIR)
 
 client = MongoClient(MONGO_URL)
 db = client['DS']
@@ -41,7 +41,8 @@ def handler(update, context):
     if '뭐해' in user_text:
         bot.send_message(chat_id, text='자연어 처리에 대해 공부중이에요.')  # 답장보내기
     elif '빈 강의실' and '지금' in user_text:  # 지금 차관 빈 강의실 어디야?
-        bot.send_message(chat_id, text='현재 차관 빈강의실은 000, 000, 000 입니다.')
+            bot.send_message(chat_id, get_weekday())
+            bot.send_message(chat_id, text='현재 차관 빈강의실은 000, 000, 000 입니다.')
     else:
         bot.send_message(chat_id, text='수집되지 않은 정보입니다.')
 
