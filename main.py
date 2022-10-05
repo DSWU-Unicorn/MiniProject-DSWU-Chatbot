@@ -8,6 +8,7 @@ from pymongo import MongoClient
 from DataBase.config import MONGO_URL, MONGO_DB_NAME
 from Chatbot.get_time import get_weekday, get_now_time, get_now_date, get_next_day, now, get_n_day_weekday
 from datetime import datetime, timedelta
+import tensorflow as tf
 
 BASE_DIR = Path(__file__).resolve().parent
 # print('base dir is..', BASE_DIR)
@@ -15,6 +16,13 @@ BASE_DIR = Path(__file__).resolve().parent
 client = MongoClient(MONGO_URL)
 db = client['DS']
 bot = telegram.Bot(token=api_key)
+
+# model = tf.keras.models.load_model(BASE_DIR / 'Model/ner_model.h5')
+
+
+
+
+
 
 info_message = '''
 공강이 에게 빈 강의실 정보를 물어봐보세요. 
@@ -42,46 +50,76 @@ def handler(update, context):
     user_text = update.message.text  # 사용자가 보낸 메세지를 user_text 변수에 저장합니다.
     # chat_id= update.message.chat_id
 
+    # predicted_val = model.predict(user_text)
+
     if '뭐해' in user_text:
         bot.send_message(chat_id, text='자연어 처리에 대해 공부중이에요.')  # 답장보내기
     elif '지금' in user_text:  # 지금(v)차235(v)비었어? # 띄어쓰기 필수
-        # print(get_now_time())
+        print('get_now_time: ', get_now_time())
+
         place = user_text.split()[1]
         if db.inform.find_one({'강의실': place}):
             class_time = db.inform.find_one({'강의실': place})['강의시간']
             new_class_time = class_time.replace("'", '').replace("[", '').replace("]", '').replace(" ", '')
-            # print(new_class_time)
-            class_list = new_class_time.split(',')  # 리스트 자료형
+            print(new_class_time)  # 금C~D,목F,수C~D,수F,월D,월E,화D
 
-            test = []
+            class_list = new_class_time.split(',')  # 문자열 to 리스트 자료형으로 변경
+
+            today_lec_time = []
             alpha_list = []  # 강의 교시인 알파벳 추출
             lec_time_list = []
 
-            if get_weekday() in new_class_time:  # 문자열
-                # if '화' in new_class_time:             # 주말이면 db에 없는 데이터라 임의로 요일 지정
-                # 리스트의 인덱스를 찾은 후 알파벳을 찾아 디비의 정보와 비교
+            if get_weekday() in new_class_time:  # 강의 시간 중 오늘 요일이 있다면
+                # 리스트의 인덱스와 강의 시간을 찾아 디비의 강의 시간 정보와 비교
                 for i in range(len(class_list)):
                     if get_weekday() in class_list[i]:
-                        test.append(class_list[i])
-                for i in test:
-                    if len(i) == 4:
-                        for j in range(len(i)):
+                        today_lec_time.append(class_list[i])
+                print('today_lec_time: ', today_lec_time)
+
+                for lec_time in today_lec_time:
+                    if len(lec_time) == 4:
+                        for j in range(len(lec_time)):
                             if j == 1:
-                                alpha_list.append(i[j])
+                                alpha_list.append(lec_time[j])
                             elif j == 3:
-                                alpha_list.append(i[j])
-                    elif len(i) == 2:
-                        for l in range(len(i)):
-                            if l == 1:
-                                alpha_list.append(i[l])
+                                alpha_list.append(lec_time[j])
+                    elif len(lec_time) == 2:
+                        for k in range(len(lec_time)):
+                            if k == 1:
+                                alpha_list.append(lec_time[k])
 
                 for a in alpha_list:
                     lec_time = db.inform.find_one({'교시': a})['시간']
                     lec_time_list.append(lec_time)
-                # for s in lec_time_list:
-                #     print('s is', s)
-                bot.send_message(chat_id,
-                                 text=f"입력 하신 {place}의 강의 시간은 {lec_time_list}입니다. 이를 제외한 시간은 빈 강의실로 사용 가능 합니다.")
+                # print('lec_time_list :', lec_time_list)
+
+                # 1005 사용자가 입력한 시간과 시간표의 수업 시간이 일치할 때 코드 작성
+                start_time_list = []
+                end_time_list = []
+                for s in lec_time_list:
+                    start_time = datetime.strptime((str(s.split('-')[0])), '%H:%M')
+                    end_time = datetime.strptime((str(s.split('-')[1])), '%H:%M')
+                    start_time_list.append((start_time).strftime('%H:%M'))
+                    end_time_list.append((end_time).strftime('%H:%M'))
+
+                print('start_time_list:', start_time_list)
+                print('end_time_list:', end_time_list)
+
+                break_flag = True  # 이중 for문 빠져나옴
+                for start_time_index in start_time_list:
+                    for end_time_index in end_time_list:
+                        if get_now_time() >= start_time_index and get_now_time() <= end_time_index:
+                            bot.send_message(chat_id, text=f"입력 하신 {place} 은 현재 수업중입니다.")
+                            break_flag = False
+                            break
+                        else:
+                            bot.send_message(chat_id,
+                                             text=f"입력 하신 {place} 의 강의 시간은 {lec_time_list} 입니다. 이를 제외한 시간은 빈 강의실로 사용 가능 합니다.")
+                            break_flag = False
+                            break
+                    if (break_flag == False):
+                        break
+
     elif '10' in user_text:  # 10/5 차320 쓸 수 있어?
         # 1003 날짜별 발화처리-> 시간대별은 1004에 하기로! 근데 코드는 위에 로직과 비슷할듯(2시-> db의 어느 교시에 해당하는지 비교)
         input_date = user_text.split()[0]
