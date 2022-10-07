@@ -1,3 +1,4 @@
+import numpy as np
 import telegram
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
 from pathlib import Path
@@ -9,6 +10,13 @@ from DataBase.config import MONGO_URL, MONGO_DB_NAME
 from Chatbot.get_time import get_weekday, get_now_time, get_now_date, get_next_day, now, get_n_day_weekday
 from datetime import datetime, timedelta
 import tensorflow as tf
+import pickle
+from Model.IntentModel import IntentModel
+from allzero.Preprocess import Preprocess
+from tensorflow.keras import preprocessing
+from Model.NerModel import NerModel
+from Model.IntentModel import IntentModel
+
 
 BASE_DIR = Path(__file__).resolve().parent
 # print('base dir is..', BASE_DIR)
@@ -17,11 +25,14 @@ client = MongoClient(MONGO_URL)
 db = client['DS']
 bot = telegram.Bot(token=api_key)
 
-# model = tf.keras.models.load_model(BASE_DIR / 'Model/ner_model.h5')
+# 1006 model 추가
+# 의도 파악
+p = Preprocess(word2index_dic='./allzero/chatbot_dict.bin', userdic='./allzero/user_dic.tsv')
+intent = IntentModel(model_name='./Model/intent_model.h5', proprocess=p)
 
 
-
-
+# 개체명 인식
+ner = tf.keras.models.load_model('./Model/ner_model.h5')
 
 
 info_message = '''
@@ -49,19 +60,57 @@ updater.start_polling()
 def handler(update, context):
     user_text = update.message.text  # 사용자가 보낸 메세지를 user_text 변수에 저장합니다.
     # chat_id= update.message.chat_id
+    predict = intent.predict_class(user_text)
+    intent_name = intent.labels[predict]
 
-    # predicted_val = model.predict(user_text)
+    # 모델 돌릴때 추가적으로 필요한 코드 (model_test.py 파일 코드)
+    p = Preprocess(word2index_dic='./allzero/chatbot_dict.bin', userdic='./allzero/user_dic.tsv')
+    #
+    # pos = p.pos(user_text)
+    # keywords = p.get_keywords(pos, without_tag=True)
+    # new_seq = p.get_wordidx_sequence(keywords)
+    # max_len = 40
+    #
+    # new_padded_seqs = preprocessing.sequence.pad_sequences([new_seq], padding="post", value=0, maxlen=max_len)
+    # print("새로운 유형의 시퀀스 : ", new_seq)
+    # print("새로운 유형의 시퀀스 : ", new_padded_seqs)
+
+    # NER 예측
+    # ner = tf.keras.models.load_model('./Model/ner_model.h5')
+    # p = ner.predict(np.array([new_padded_seqs[0]]))
+    # p = np.argmax(p, axis=-1)  # 예측된 NER 인덱스 값 추출
+    # print("p출력", p)  # ============================== 여기서 부터 시작하기
+    #
+    # print("{:10} {:5}".format("단어", "예측된 NER"))
+    # print("-" * 50)
+    # index_to_ner = {1: 'O', 2: 'B_DT', 3: 'B_FOOD', 4: 'B_ROOM', 5: 'I', 6: 'B_OG', 7: 'B_PS', 8: 'B_LC', 9: 'NNP',
+    #                 10: 'B_TI', 0: 'PAD'}
+    # for w, pred in zip(keywords, p[0]):
+    #     print("{:10} {:5}".format(w, index_to_ner[pred]))
+
+    # predicts = ner.predict(user_text)
+    # ner_tags = ner.predict_tags(user_text)
+    ner = NerModel(model_name='./Model/ner_model.h5', proprocess=p)
+    predicts = ner.predict(user_text)
+    ner_tags = ner.predict_tags(user_text)
+
+    print("질문 : ", user_text)
+    print("=" * 100)
+    print("의도 파악 : ", intent_name)
+    print("개체명 인식 : ", predicts)
+    print("답변 검색에 필요한 NER 태그 : ", ner_tags)
+    print("=" * 100)
 
     if '뭐해' in user_text:
         bot.send_message(chat_id, text='자연어 처리에 대해 공부중이에요.')  # 답장보내기
     elif '지금' in user_text:  # 지금(v)차235(v)비었어? # 띄어쓰기 필수
-        print('get_now_time: ', get_now_time())
+        print('get_now_time: ', get_now_time()) # 현재 시간
 
         place = user_text.split()[1]
         if db.inform.find_one({'강의실': place}):
             class_time = db.inform.find_one({'강의실': place})['강의시간']
             new_class_time = class_time.replace("'", '').replace("[", '').replace("]", '').replace(" ", '')
-            print(new_class_time)  # 금C~D,목F,수C~D,수F,월D,월E,화D
+            # print(new_class_time)  # 금C~D,목F,수C~D,수F,월D,월E,화D
 
             class_list = new_class_time.split(',')  # 문자열 to 리스트 자료형으로 변경
 
@@ -102,8 +151,8 @@ def handler(update, context):
                     start_time_list.append((start_time).strftime('%H:%M'))
                     end_time_list.append((end_time).strftime('%H:%M'))
 
-                print('start_time_list:', start_time_list)
-                print('end_time_list:', end_time_list)
+                # print('start_time_list:', start_time_list)
+                # print('end_time_list:', end_time_list)
 
                 break_flag = True  # 이중 for문 빠져나옴
                 for start_time_index in start_time_list:
