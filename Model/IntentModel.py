@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.models import load_model
 from tensorflow.keras import preprocessing
 
 
@@ -10,6 +10,8 @@ class IntentModel:
         # 의도 클래스 별 레이블
         # self.labels = {0: "인사", 1: "욕설", 2: "주문", 3: "예약", 4: "기타"}
         self.labels = {0: "인사", 1: "욕설", 2: "주문", 3: "예약", 4: "기타", 5: "강의실"}
+        # 1007 인사, 강의실, 기타로 분리하기
+        # 데이터 수정 필요
 
         # 의도 분류 모델 불러오기
         self.model = load_model(model_name)
@@ -28,7 +30,7 @@ class IntentModel:
         sequences = [self.p.get_wordidx_sequence(keywords)]
 
         # 단어 시퀀스 벡터 크기
-        from allzero.GlobalParams import MAX_SEQ_LEN
+        from Model.GlobalParams import MAX_SEQ_LEN
 
         # 패딩처리
         padded_seqs = preprocessing.sequence.pad_sequences(sequences, maxlen=MAX_SEQ_LEN, padding='post')

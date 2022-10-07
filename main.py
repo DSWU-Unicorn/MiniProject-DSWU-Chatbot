@@ -1,25 +1,17 @@
-import numpy as np
 import telegram
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
 from pathlib import Path
-import re
-from collections import Counter
 from Chatbot.config import api_key, chat_id
 from pymongo import MongoClient
-from DataBase.config import MONGO_URL, MONGO_DB_NAME
-from Chatbot.get_time import get_weekday, get_now_time, get_now_date, get_next_day, now, get_n_day_weekday
-from datetime import datetime, timedelta
+from DataBase.config import MONGO_URL
+from Chatbot.get_time import get_weekday, get_now_time, get_next_day, get_n_day_weekday
+from datetime import datetime
 import tensorflow as tf
-import pickle
-from Model.IntentModel import IntentModel
-from allzero.Preprocess import Preprocess
-from tensorflow.keras import preprocessing
+from Model.Preprocess import Preprocess
 from Model.NerModel import NerModel
 from Model.IntentModel import IntentModel
 
-
 BASE_DIR = Path(__file__).resolve().parent
-# print('base dir is..', BASE_DIR)
 
 client = MongoClient(MONGO_URL)
 db = client['DS']
@@ -27,13 +19,11 @@ bot = telegram.Bot(token=api_key)
 
 # 1006 model 추가
 # 의도 파악
-p = Preprocess(word2index_dic='./allzero/chatbot_dict.bin', userdic='./allzero/user_dic.tsv')
+p = Preprocess(word2index_dic='./Model/chatbot_dict.bin', userdic='./Model/user_dic.tsv')
 intent = IntentModel(model_name='./Model/intent_model.h5', proprocess=p)
-
 
 # 개체명 인식
 ner = tf.keras.models.load_model('./Model/ner_model.h5')
-
 
 info_message = '''
 공강이 에게 빈 강의실 정보를 물어봐보세요. 
@@ -64,32 +54,6 @@ def handler(update, context):
     intent_name = intent.labels[predict]
 
     # 모델 돌릴때 추가적으로 필요한 코드 (model_test.py 파일 코드)
-    p = Preprocess(word2index_dic='./allzero/chatbot_dict.bin', userdic='./allzero/user_dic.tsv')
-    #
-    # pos = p.pos(user_text)
-    # keywords = p.get_keywords(pos, without_tag=True)
-    # new_seq = p.get_wordidx_sequence(keywords)
-    # max_len = 40
-    #
-    # new_padded_seqs = preprocessing.sequence.pad_sequences([new_seq], padding="post", value=0, maxlen=max_len)
-    # print("새로운 유형의 시퀀스 : ", new_seq)
-    # print("새로운 유형의 시퀀스 : ", new_padded_seqs)
-
-    # NER 예측
-    # ner = tf.keras.models.load_model('./Model/ner_model.h5')
-    # p = ner.predict(np.array([new_padded_seqs[0]]))
-    # p = np.argmax(p, axis=-1)  # 예측된 NER 인덱스 값 추출
-    # print("p출력", p)  # ============================== 여기서 부터 시작하기
-    #
-    # print("{:10} {:5}".format("단어", "예측된 NER"))
-    # print("-" * 50)
-    # index_to_ner = {1: 'O', 2: 'B_DT', 3: 'B_FOOD', 4: 'B_ROOM', 5: 'I', 6: 'B_OG', 7: 'B_PS', 8: 'B_LC', 9: 'NNP',
-    #                 10: 'B_TI', 0: 'PAD'}
-    # for w, pred in zip(keywords, p[0]):
-    #     print("{:10} {:5}".format(w, index_to_ner[pred]))
-
-    # predicts = ner.predict(user_text)
-    # ner_tags = ner.predict_tags(user_text)
     ner = NerModel(model_name='./Model/ner_model.h5', proprocess=p)
     predicts = ner.predict(user_text)
     ner_tags = ner.predict_tags(user_text)
@@ -104,7 +68,7 @@ def handler(update, context):
     if '뭐해' in user_text:
         bot.send_message(chat_id, text='자연어 처리에 대해 공부중이에요.')  # 답장보내기
     elif '지금' in user_text:  # 지금(v)차235(v)비었어? # 띄어쓰기 필수
-        print('get_now_time: ', get_now_time()) # 현재 시간
+        print('get_now_time: ', get_now_time())  # 현재 시간
 
         place = user_text.split()[1]
         if db.inform.find_one({'강의실': place}):
