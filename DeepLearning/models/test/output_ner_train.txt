@@ -1,0 +1,38 @@
+;내일 모레 미리관 알리 어 주 시 어요 
+$내일 모레 미리관 알리 어 주 시 어요 
+1	내일	NNG	B_DT
+2	모레	NNG	B_DT
+3	미리관	NNG	B_ROOM
+4	알리	VV	O
+5	어	EC	O
+6	주	VX	O
+7	시	EP	O
+8	어요	EC	O
+
+;오늘 차관 알리 어 주 시 어요 
+$오늘 차관 알리 어 주 시 어요 
+1	오늘	NNG	B_DT
+2	차관	NNG	B_ROOM
+3	알리	VV	O
+4	어	EC	O
+5	주	VX	O
+6	시	EP	O
+7	어요	EC	O
+
+;어제 차관 어디 야 
+$어제 차관 어디 야 
+1	어제	NNG	B_DT
+2	차관	NNG	B_ROOM
+3	어디	NP	O
+4	야	JX	O
+
+;오후 차미리 어디 서 공부 하 아 
+$오후 차미리 어디 서 공부 하 아 
+1	오후	NNG	B_DT
+2	차미리	NNG	B_ROOM
+3	어디	NP	O
+4	서	JKB	O
+5	공부	NNG	O
+6	하	XSV	O
+7	아	EC	O
+
