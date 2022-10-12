@@ -7,7 +7,6 @@ now = datetime.now()
 
 # 채팅이 들어오면 날짜, 시간을 파악해서 데이터베이스에 있는 정보를 뽑아준다.
 def get_now_time():
-    print(get_now_time())
     return now.strftime('%H:%M')
 
 
@@ -19,21 +18,16 @@ def get_now_date():
 def get_weekday():
     if now.strftime('%Y-%m-%d %H:%M'):
         if now.weekday() == 0:  # Mon
-            # if 월요일 빈 강의실 in db:
             return '월'
 
         if now.weekday() == 1:  # Tues
             return '화'
-            # if 화요일 빈 강의실 in db:
         if now.weekday() == 2:
             return '수'
-            # if 수요일 빈 강의실 in db:
         if now.weekday() == 3:
             return '목'
-            # if 목요일 빈 강의실 in db:
         if now.weekday() == 4:
             return '금'
-            # if 금요일 빈 강의실 in db:
             # 현재 시간 기준으로 빈 강의실 정보를 어떻게 뿌릴지 고ㅑ
         elif now.weekday() == 5 or now.weekday() == 6:  # weekend
             return '주말'
@@ -42,21 +36,15 @@ def get_weekday():
 def get_n_day_weekday(n_day):
     n_day = datetime.strptime(n_day, '%Y.%m.%d')
     if n_day.weekday() == 0:  # Mon
-        # if 월요일 빈 강의실 in db:
         return '월'
-
     if n_day.weekday() == 1:  # Tues
         return '화'
-        # if 화요일 빈 강의실 in db:
     if n_day.weekday() == 2:
         return '수'
-        # if 수요일 빈 강의실 in db:
     if n_day.weekday() == 3:
         return '목'
-        # if 목요일 빈 강의실 in db:
     if n_day.weekday() == 4:
         return '금'
-        # if 금요일 빈 강의실 in db:
         # 현재 시간 기준으로 빈 강의실 정보를 어떻게 뿌릴지 고ㅑ
     elif n_day.weekday() == 5 or n_day.weekday() == 6:  # weekend
         return '주말'
