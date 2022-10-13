@@ -6,12 +6,8 @@ from pymongo import MongoClient
 from DataBase.config import MONGO_URL
 from Chatbot.get_time import get_weekday, get_now_time, get_next_day, get_n_day_weekday
 from datetime import datetime
-import tensorflow as tf
-from Model.Preprocess import Preprocess
-from Model.NerModel import NerModel
-from Model.IntentModel import IntentModel
-from hanspell import spell_checker  # 1011 맞춤법 검사기 추가
 
+# import datetime
 BASE_DIR = Path(__file__).resolve().parent
 
 client = MongoClient(MONGO_URL)
@@ -19,28 +15,19 @@ db = client['DS']
 bot = telegram.Bot(token=api_key)
 answer = db.answer  # 답변 출력
 
-# room, time 을 다영이 정보로 변환하기
-# place = "차235"
-
 
 def find_answer1(place):
     global class_list, new_class_time
+    print('find_answer1:', place)
 
-    print(place)
     if db.inform.find_one({'강의실': place}):
-        class_time = db.inform.find_one({'강의실': place})['강의시간']
-        print(class_time)
-        new_class_time = class_time.replace("'", '').replace("[", '').replace("]", '').replace(" ", '')
+        lec_time = db.inform.find_one({'강의실': place})['강의시간']
+        print('lec_time:', lec_time)
+        new_class_time = lec_time.replace("'", '').replace("[", '').replace("]", '').replace(" ", '')
         class_list = new_class_time.split(',')
-        print(class_list)  # 금C~D,목F,수C~D,수F,월D,월E,화D
+        print('class_list', class_list)  # 금C~D,목F,수C~D,수F,월D,월E,화D
 
     return class_list, new_class_time
-
-# test codes
-# class_list, new_class_time = find_answer1(place)
-# print(class_list)
-# print(new_class_time)
-# print('-----------------------')
 
 
 def find_answer2(class_list, new_class_time):
@@ -85,4 +72,47 @@ def find_answer2(class_list, new_class_time):
     return start_time_list, end_time_list, lec_time_list
 
 
-# start_time_list, end_time_list, lec_time_list = find_answer2(class_list, new_class_time)
+def find_answer3(class_list, new_class_time, n_day):
+    test = []
+    alpha_list = []
+    lec_time_list = []
+    if get_n_day_weekday(n_day) in new_class_time:
+        # 리스트의 인덱스를 찾은 후 알파벳을 찾아 디비의 정보와 비교
+        for i in range(len(class_list)):
+            if get_n_day_weekday(n_day) in class_list[i]:
+                test.append(class_list[i])
+
+        for i in test:
+            if len(i) == 4:
+                for j in range(len(i)):
+                    if j == 1:
+                        alpha_list.append(i[j])
+                    elif j == 3:
+                        alpha_list.append(i[j])
+            elif len(i) == 2:
+                for l in range(len(i)):
+                    if l == 1:
+                        alpha_list.append(i[l])
+
+        for a in alpha_list:
+            lec_time = db.inform.find_one({'교시': a})['시간']
+            lec_time_list.append(lec_time)
+    else:  # 주말이라면
+        return False
+    return lec_time_list
+
+
+def find_n_day(class_time):
+    global day_split
+    mon_split = class_time.split("월")
+
+    mon = int(mon_split[0])
+
+    for j in mon_split:
+        day_split = j.split("일")
+
+    day = int(day_split[0].replace(" ", ""))
+
+    test = datetime(2022, mon, day)
+    n_day = get_next_day(test)
+    return n_day
