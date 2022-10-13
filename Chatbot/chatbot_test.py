@@ -66,8 +66,8 @@ if intent_name == "기타":
 elif intent_name == "인사":
     answer_text = test.find_one({"Intent": "인사"})['Answer']
 
-elif intent_name == "욕설":
-    answer_text = test.find_one({"Intent": "욕설"})['Answer']
+# elif intent_name == "욕설":
+#     answer_text = test.find_one({"Intent": "욕설"})['Answer']
 
 
 # 날짜, 강의실 정보가 모두 입력되었을 때

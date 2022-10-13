@@ -15,9 +15,9 @@ db = client['DS']
 
 for i in range(len(df)):
     answer_data = {
-        "intent": df.iloc[i]["Intent"],
-        "ner": df.iloc[i]["NER"],
-        "answer": df.iloc[i]["Answer"],
+        "Intent": df.iloc[i]["Intent"],
+        "NER": df.iloc[i]["NER"],
+        "Answer": df.iloc[i]["Answer"],
     }
     print(answer_data)
     dpInsert = db.answer.insert_one(answer_data)  # db에 정보 입력
