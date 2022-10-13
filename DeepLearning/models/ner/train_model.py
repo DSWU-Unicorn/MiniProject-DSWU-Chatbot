@@ -1,9 +1,10 @@
- import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras import preprocessing
 from sklearn.model_selection import train_test_split
 import numpy as np
 from utils.Preprocess import Preprocess
+
 
 # 학습 파일 불러오기
 def read_file(file_name):
@@ -20,6 +21,7 @@ def read_file(file_name):
             else:
                 this_sent.append(tuple(l.split()))
     return sents
+
 
 p = Preprocess(word2index_dic='../../train_tools/dict/chatbot_dict.bin',
                userdic='../../utils/user_dic.tsv')
@@ -40,7 +42,7 @@ for t in corpus:
         tagged_sentence.append((w[1], w[3]))
         sentence.append(w[1])
         bio_tag.append(w[3])
-    
+
     sentences.append(sentence)
     tags.append(bio_tag)
 
@@ -51,10 +53,10 @@ print("샘플 크기 : \n", len(sentences))
 print("0번 째 샘플 단어 시퀀스 : \n", sentences[0])
 print("0번 째 샘플 bio 태그 : \n", tags[0])
 print("샘플 단어 시퀀스 최대 길이 :", max(len(l) for l in sentences))
-print("샘플 단어 시퀀스 평균 길이 :", (sum(map(len, sentences))/len(sentences)))
+print("샘플 단어 시퀀스 평균 길이 :", (sum(map(len, sentences)) / len(sentences)))
 
 # 토크나이저 정의
-tag_tokenizer = preprocessing.text.Tokenizer(lower=False) # 태그 정보는 lower=False 소문자로 변환하지 않는다.
+tag_tokenizer = preprocessing.text.Tokenizer(lower=False)  # 태그 정보는 lower=False 소문자로 변환하지 않는다.
 tag_tokenizer.fit_on_texts(tags)
 
 # 단어사전 및 태그 사전 크기
@@ -68,7 +70,7 @@ x_train = [p.get_wordidx_sequence(sent) for sent in sentences]
 y_train = tag_tokenizer.texts_to_sequences(tags)
 # print("y_train", y_train)
 
-index_to_ner = tag_tokenizer.index_word # 시퀀스 인덱스를 NER로 변환 하기 위해 사용
+index_to_ner = tag_tokenizer.index_word  # 시퀀스 인덱스를 NER로 변환 하기 위해 사용
 index_to_ner[0] = 'PAD'
 # print(index_to_ner)
 
@@ -96,7 +98,6 @@ print("학습 샘플 레이블 형상 : ", y_train.shape)
 print("테스트 샘플 시퀀스 형상 : ", x_test.shape)
 print("테스트 샘플 레이블 형상 : ", y_test.shape)
 
-
 # 모델 정의 (Bi-LSTM)
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Embedding, Dense, TimeDistributed, Dropout, Bidirectional
@@ -107,7 +108,25 @@ model.add(Embedding(input_dim=vocab_size, output_dim=30, input_length=max_len, m
 model.add(Bidirectional(LSTM(200, return_sequences=True, dropout=0.50, recurrent_dropout=0.25)))
 model.add(TimeDistributed(Dense(tag_size, activation='softmax')))
 model.compile(loss='categorical_crossentropy', optimizer=Adam(0.01), metrics=['accuracy'])
-model.fit(x_train, y_train, batch_size=128, epochs=10)
+results = model.fit(x_train, y_train, batch_size=128, epochs=10)
+
+import matplotlib.pyplot as plt
+
+# summarize history for accuracy
+plt.plot(results.history['accuracy'])
+plt.title('NER model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train'], loc='upper left')
+plt.show()
+
+# summarize history for loss
+plt.plot(results.history['loss'])
+plt.title('NER model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train'], loc='upper left')
+plt.show()
 
 print("평가 결과 : ", model.evaluate(x_test, y_test)[1])
 model.save('ner_model.h5')
@@ -131,8 +150,8 @@ from seqeval.metrics import f1_score, classification_report
 
 # 테스트 데이터셋의 NER 예측
 y_predicted = model.predict(x_test)
-pred_tags = sequences_to_tag(y_predicted) # 예측된 NER
-test_tags = sequences_to_tag(y_test)    # 실제 NER
+pred_tags = sequences_to_tag(y_predicted)  # 예측된 NER
+test_tags = sequences_to_tag(y_test)  # 실제 NER
 
 # F1 평가 결과
 print(classification_report(test_tags, pred_tags))

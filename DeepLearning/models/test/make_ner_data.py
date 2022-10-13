@@ -4,8 +4,10 @@ from random import  *
 
 date_file = 'date.csv'
 food_file = 'food.csv'
+##
 room_file = 'room.csv'
 sent_file = '주문조합.csv'
+##
 sent_file2 = '요청조합.csv'
 
 komoran = Komoran(userdic='../../utils/user_dic.tsv')
@@ -14,7 +16,7 @@ file = open("output_ner_train.txt", 'w')
 with open(date_file, mode='r', encoding='utf-8-sig') as df:
     dr = csv.reader(df)
     for k, r in enumerate(dr):
-        food_sel = randint(1, 8)
+        food_sel = randint(1, 24)       ## room.csv의 개수만큼 돌림
         with open(room_file, mode='r', encoding='utf-8-sig') as f:
             reader = csv.reader(f)
 
@@ -22,7 +24,7 @@ with open(date_file, mode='r', encoding='utf-8-sig') as df:
                 if i != food_sel: continue
 
                 # sel = randint(1, 155)
-                sel = randint(1, 9)
+                sel = randint(1, 11)     ## 요청조합 csv 개수
                 with open(sent_file2, mode="r", encoding="utf-8") as qf:
                     qreader = csv.reader(qf)
                     for qi, qrow in enumerate(qreader):
